@@ -61,7 +61,7 @@ public final class CalciteSystemProperty<T> {
    * normal execution.
    */
   public static final CalciteSystemProperty<Boolean> DEBUG =
-      booleanProperty("calcite.debug", false);
+      booleanProperty("calcite.debug", true);
 
   /**
    * Whether to exploit join commutative property.

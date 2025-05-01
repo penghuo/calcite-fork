@@ -231,6 +231,27 @@ class CsvTest {
     sql("model", sql).returns(expected).ok();
   }
 
+  @Test void testExplainOrderBy() {
+    // rule does not fire, because we're using 'dumb' tables in simple model
+    final String sql = "explain plan for select NAME from EMPS order by empno";
+    final String expected = "PLAN=EnumerableTableScan(table=[[SALES, EMPS]])\n";
+    sql("model", sql).returns(expected).ok();
+  }
+
+  @Test void testOrderBy() {
+    // rule does not fire, because we're using 'dumb' tables in simple model
+    final String sql = "select NAME from EMPS order by empno";
+    final String expected = "PLAN=EnumerableTableScan(table=[[SALES, EMPS]])\n";
+    sql("model", sql).returns(expected).ok();
+  }
+
+  @Test void testGrammer() {
+    // rule does not fire, because we're using 'dumb' tables in simple model
+    final String sql = "select NAME from EMPS where order+1";
+    final String expected = "PLAN=EnumerableTableScan(table=[[SALES, EMPS]])\n";
+    sql("model", sql).returns(expected).ok();
+  }
+
   @Test void testPushDownProject() {
     final String sql = "explain plan for select * from EMPS";
     final String expected = "PLAN=CsvTableScan(table=[[SALES, EMPS]], "
@@ -518,6 +539,17 @@ class CsvTest {
         }
       }
     }
+  }
+
+  @Test void testUDFifnull() {
+    final String sql = "select ifnull(null, '1')";
+    sql("1", sql).ok();
+  }
+
+
+  @Test void testCurrentTimestamp() {
+    final String sql = "select current_timestamp";
+    sql("smart", sql).ok();
   }
 
   @Test void testJoinOnString() {

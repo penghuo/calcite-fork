@@ -524,13 +524,13 @@ public class VolcanoPlanner extends AbstractRelOptPlanner {
 
     ruleDriver.drive();
 
-    if (LOGGER.isTraceEnabled()) {
+//    if (LOGGER.isTraceEnabled()) {
       StringWriter sw = new StringWriter();
       final PrintWriter pw = new PrintWriter(sw);
       dump(pw);
       pw.flush();
       LOGGER.info(sw.toString());
-    }
+//    }
     dumpRuleAttemptsInfo();
     RelNode cheapest = root.buildCheapestPlan(this);
     if (LOGGER.isDebugEnabled()) {
