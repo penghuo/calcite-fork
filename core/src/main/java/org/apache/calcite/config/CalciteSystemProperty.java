@@ -239,7 +239,7 @@ public final class CalciteSystemProperty<T> {
    * Whether to run Druid tests.
    */
   public static final CalciteSystemProperty<Boolean> TEST_DRUID =
-      booleanProperty("calcite.test.druid", false);
+      booleanProperty("calcite.test.druid", true);
 
   /**
    * Whether to run Cassandra tests.

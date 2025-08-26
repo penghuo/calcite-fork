@@ -203,6 +203,16 @@ class FileAdapterTest {
   }
 
   /** Reads the DEPTS table from the JSON schema. */
+  @Test void testJsonSalesDeptsHP() {
+    final String sql = "select deptno from sales.depts";
+    sql("sales-json", sql)
+        .returns("DEPTNO=10; NAME=Sales",
+            "DEPTNO=20; NAME=Marketing",
+            "DEPTNO=30; NAME=Accounts")
+        .ok();
+  }
+
+  /** Reads the DEPTS table from the JSON schema. */
   @Test void testJsonSalesDepts() {
     final String sql = "select * from sales.depts";
     sql("sales-json", sql)

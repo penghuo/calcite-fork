@@ -19,6 +19,7 @@ package org.apache.calcite.test;
 import org.apache.calcite.adapter.csv.CsvSchemaFactory;
 import org.apache.calcite.adapter.csv.CsvStreamTableFactory;
 import org.apache.calcite.jdbc.CalciteConnection;
+import org.apache.calcite.runtime.Hook;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.util.Sources;
@@ -133,6 +134,77 @@ class CsvTest {
 
   static Stream<String> explainFormats() {
     return Stream.of("text", "dot");
+  }
+
+  @Test void testFilterModel() {
+    sql("model", "select name from EMPS where name = 'John'").ok();
+  }
+
+  @Test void testComplex() {
+    sql("model", "WITH complete_results AS (  \n" +
+        "  SELECT   \n" +
+        "    name,  \n" +
+        "    deptno,\n" +
+        "    COUNT(*) AS cnt  \n" +
+        "  FROM DEPTS  \n" +
+        "  GROUP BY name, deptno\n" +
+        "),  \n" +
+        "totals AS (  \n" +
+        "  SELECT   \n" +
+        "    deptno,  \n" +
+        "    SUM(cnt) AS grand_total  \n" +
+        "  FROM complete_results  \n" +
+        "  GROUP BY deptno  \n" +
+        "),  \n" +
+        "top_values AS (  \n" +
+        "  SELECT deptno  \n" +
+        "  FROM totals  \n" +
+        "  ORDER BY grand_total DESC  \n" +
+        "  LIMIT 1\n" +
+        "),  \n" +
+        "results_with_other AS (  \n" +
+        "  SELECT   \n" +
+        "    cr.deptno,  \n" +
+        "    CASE   \n" +
+        "      WHEN tv.deptno IS NOT NULL THEN cr.deptno   \n" +
+        "      ELSE 0   \n" +
+        "    END AS host_label,  \n" +
+        "    SUM(cr.cnt) AS fcnt  \n" +
+        "  FROM complete_results cr  \n" +
+        "  LEFT JOIN top_values tv ON cr.deptno = tv.deptno  \n" +
+        "  GROUP BY cr.deptno,   \n" +
+        "           CASE WHEN tv.deptno IS NOT NULL THEN cr.deptno ELSE 0 END  \n" +
+        ")  \n" +
+        "SELECT   \n" +
+        "  deptno,  \n" +
+        "  host_label,  \n" +
+        "  fcnt  \n" +
+        "FROM results_with_other  \n" +
+        "ORDER BY deptno ASC, host_label ASC").ok();
+  }
+
+  @Test void testFilterModelBindable() {
+    try (Hook.Closeable ignored = Hook.ENABLE_BINDABLE.addThread(Hook.propertyJ(true))) {
+      sql("model", "select name from EMPS where name = 'John'").ok();
+    }
+  }
+
+  @Test void testFilterSmart() {
+    sql("smart", "select * from EMPS where name = 'John'").ok();
+  }
+
+  @Test void testFilterModelSmart() {
+    try (Hook.Closeable ignored = Hook.ENABLE_BINDABLE.addThread(Hook.propertyJ(true))) {
+      sql("smart", "select * from EMPS where name = 'John'").ok();
+    }
+  }
+
+  @Test void testFilterDynamic() {
+    sql("dynamic", "select deptno, deptno1 from DEPTS").ok();
+  }
+
+  @Test void testDynamicJson() {
+    sql("dynamic", "select deptno, cast(deptno as int)+1, noexist from sales.JSDEPTS").ok();
   }
 
   /**

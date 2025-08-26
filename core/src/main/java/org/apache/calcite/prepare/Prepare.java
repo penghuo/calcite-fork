@@ -96,7 +96,7 @@ public abstract class Prepare {
    * Convention via which results should be returned by execution.
    */
   protected final Convention resultConvention;
-  protected @Nullable CalciteTimingTracer timingTracer;
+  protected @Nullable CalciteTimingTracer timingTracer = new CalciteTimingTracer(LOGGER, "Prepare");
   protected @MonotonicNonNull List<@Nullable List<String>> fieldOrigins;
   protected @MonotonicNonNull RelDataType parameterRowType;
 

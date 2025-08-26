@@ -1,0 +1,14 @@
+[
+  {
+    "DEPTNO": 10,
+    "NAME": "Sales"
+  },
+  {
+    "DEPTNO": 20,
+    "NAME": "Marketing"
+  },
+  {
+    "DEPTNO": "30",
+    "NAME": "Accounts"
+  }
+]

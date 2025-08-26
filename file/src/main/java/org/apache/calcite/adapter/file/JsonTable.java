@@ -17,8 +17,11 @@
 package org.apache.calcite.adapter.file;
 
 import org.apache.calcite.adapter.file.JsonEnumerator.JsonDataConverter;
+import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
+import org.apache.calcite.rel.type.DynamicRecordTypeImpl;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.schema.Statistic;
 import org.apache.calcite.schema.Statistics;
 import org.apache.calcite.schema.impl.AbstractTable;
@@ -42,7 +45,9 @@ public class JsonTable extends AbstractTable {
 
   @Override public RelDataType getRowType(RelDataTypeFactory typeFactory) {
     if (rowType == null) {
-      rowType = JsonEnumerator.deduceRowType(typeFactory, source).getRelDataType();
+//      rowType = JsonEnumerator.deduceRowType(typeFactory, source).getRelDataType();
+      this.rowType = new DynamicRecordTypeImpl(
+          new JavaTypeFactoryImpl(RelDataTypeSystem.DEFAULT));
     }
     return rowType;
   }
@@ -51,7 +56,7 @@ public class JsonTable extends AbstractTable {
   public List<Object> getDataList(RelDataTypeFactory typeFactory) {
     if (dataList == null) {
       JsonDataConverter jsonDataConverter =
-          JsonEnumerator.deduceRowType(typeFactory, source);
+          JsonEnumerator.deduceRowType(rowType, source);
       dataList = jsonDataConverter.getDataList();
     }
     return dataList;
