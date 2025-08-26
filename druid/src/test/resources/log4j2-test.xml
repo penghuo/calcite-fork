@@ -24,9 +24,10 @@
   </Appenders>
 
   <Loggers>
-    <Root level="INFO">
+    <Root level="TRACE">
       <AppenderRef ref="A1"/>
     </Root>
     <logger name="org.apache.calcite.adapter.druid" level="ERROR"/>
+    <logger name="org.apache.calcite.plan.RelOptPlanner" level="TRACE"/>
   </Loggers>
 </Configuration>
