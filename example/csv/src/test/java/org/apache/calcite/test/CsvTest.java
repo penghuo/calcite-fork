@@ -244,6 +244,19 @@ class CsvTest {
     sql("dynamic", "select _MAP['noexist'] from sales.JSDEPTS").ok();
   }
 
+
+  /**
+   * It returns mock data from MockEnumerator
+   */
+  @Test void testCustomizeMockTuple() {
+    sql("smart", "select _TUPLE from EMPS")
+        .returns(
+            "_TUPLE=Tuple{data={v=1}}",
+                "_TUPLE=Tuple{data={v=2}}"
+        )
+        .ok();
+  }
+
   /**
    * Tests the vanity driver.
    */

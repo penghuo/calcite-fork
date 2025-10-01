@@ -16,6 +16,7 @@
  */
 package org.apache.calcite.adapter.csv;
 
+
 import com.google.common.collect.ImmutableMap;
 
 import java.util.ArrayList;
@@ -34,11 +35,13 @@ import org.apache.calcite.linq4j.Queryable;
 import org.apache.calcite.linq4j.tree.Expression;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelProtoDataType;
 import org.apache.calcite.schema.QueryableTable;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Schemas;
 import org.apache.calcite.schema.TranslatableTable;
+import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.apache.calcite.util.ImmutableIntList;
 import org.apache.calcite.util.Source;
 
@@ -96,6 +99,7 @@ public class CsvTranslatableTable extends CsvTable
     return new CsvTableScan(context.getCluster(), relOptTable, this, fields);
   }
 
+
   public static class Tuple {
     private final Map<String, Object> data;
 
@@ -105,6 +109,13 @@ public class CsvTranslatableTable extends CsvTable
 
     public Object resolve(String fieldName) {
       return data.getOrDefault(fieldName, null);
+    }
+
+    @Override
+    public String toString() {
+      return "Tuple{" +
+          "data=" + data +
+          '}';
     }
   }
 
