@@ -25,6 +25,7 @@ import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.schema.Statistic;
 import org.apache.calcite.schema.Statistics;
 import org.apache.calcite.schema.impl.AbstractTable;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.Source;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -45,9 +46,13 @@ public class JsonTable extends AbstractTable {
 
   @Override public RelDataType getRowType(RelDataTypeFactory typeFactory) {
     if (rowType == null) {
-//      rowType = JsonEnumerator.deduceRowType(typeFactory, source).getRelDataType();
-      this.rowType = new DynamicRecordTypeImpl(
-          new JavaTypeFactoryImpl(RelDataTypeSystem.DEFAULT));
+      final RelDataType mapType =
+          typeFactory.createMapType(
+              typeFactory.createSqlType(SqlTypeName.VARCHAR),
+              typeFactory.createTypeWithNullability(
+                  typeFactory.createSqlType(SqlTypeName.ANY),
+                  true));
+      return typeFactory.builder().add("_MAP", mapType).build();
     }
     return rowType;
   }

@@ -197,6 +197,10 @@ class CsvTest {
     sql("model", "select deptno+deptno from DEPTS").ok();
   }
 
+  @Test void testSmart() {
+    sql("smart", "select * from EMPS").ok();
+  }
+
   @Test void testFilterSmart() {
     sql("smart", "select * from EMPS where name = 'John'").ok();
   }
@@ -233,6 +237,11 @@ class CsvTest {
 
   @Test void testAggRename() {
     sql("model", "SELECT age as age FROM emps").ok();
+  }
+
+
+  @Test void testDynamicJson1() {
+    sql("dynamic", "select _MAP['noexist'] from sales.JSDEPTS").ok();
   }
 
   /**

@@ -16,6 +16,13 @@
  */
 package org.apache.calcite.adapter.csv;
 
+import com.google.common.collect.ImmutableMap;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.calcite.DataContext;
 import org.apache.calcite.adapter.file.CsvEnumerator;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
@@ -56,17 +63,12 @@ public class CsvTranslatableTable extends CsvTable
 
   /** Returns an enumerable over a given projection of the fields. */
   @SuppressWarnings("unused") // called from generated code
-  public Enumerable<Object> project(final DataContext root,
+  public Enumerable<Tuple> project(final DataContext root,
       final int[] fields) {
     final AtomicBoolean cancelFlag = DataContext.Variable.CANCEL_FLAG.get(root);
-    return new AbstractEnumerable<Object>() {
-      @Override public Enumerator<Object> enumerator() {
-        JavaTypeFactory typeFactory = root.getTypeFactory();
-        return new CsvEnumerator<>(
-            source,
-            cancelFlag,
-            getFieldTypes(typeFactory),
-            ImmutableIntList.of(fields));
+    return new AbstractEnumerable<Tuple>() {
+      @Override public Enumerator<Tuple> enumerator() {
+        return new MockEnumerator();
       }
     };
   }
@@ -92,5 +94,56 @@ public class CsvTranslatableTable extends CsvTable
     final int fieldCount = relOptTable.getRowType().getFieldCount();
     final int[] fields = CsvEnumerator.identityList(fieldCount);
     return new CsvTableScan(context.getCluster(), relOptTable, this, fields);
+  }
+
+  public static class Tuple {
+    private final Map<String, Object> data;
+
+    public Tuple(Map<String, Object> data) {
+      this.data = data;
+    }
+
+    public Object resolve(String fieldName) {
+      return data.getOrDefault(fieldName, null);
+    }
+  }
+
+  public static class MockEnumerator<Tuple>
+      implements Enumerator<CsvTranslatableTable.Tuple> {
+
+    private final List<CsvTranslatableTable.Tuple> list;
+    {
+      list = new ArrayList<>();
+      list.add(new CsvTranslatableTable.Tuple(ImmutableMap.of("v", "1")));
+      list.add(new CsvTranslatableTable.Tuple(ImmutableMap.of("v", "2")));
+    }
+
+    private final Iterator<CsvTranslatableTable.Tuple> iterator = list.iterator();
+    private boolean hasNext = false;
+    private CsvTranslatableTable.Tuple current;
+
+    @Override
+    public CsvTranslatableTable.Tuple current() {
+      return current;
+    }
+
+    @Override
+    public boolean moveNext() {
+      if (iterator.hasNext()) {
+        current = iterator.next();
+        return true;
+      }
+      return false;
+    }
+
+    @Override
+    public void reset() {
+      // do nothing
+    }
+
+    @Override
+    public void close() {
+      // do nothing
+    }
   }
 }
