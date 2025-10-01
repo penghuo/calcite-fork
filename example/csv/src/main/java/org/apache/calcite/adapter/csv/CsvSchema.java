@@ -17,10 +17,16 @@
 package org.apache.calcite.adapter.csv;
 
 import org.apache.calcite.adapter.file.JsonScannableTable;
+import org.apache.calcite.schema.Function;
+import org.apache.calcite.schema.ScalarFunction;
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.schema.impl.AbstractSchema;
+import org.apache.calcite.schema.impl.ScalarFunctionImpl;
 import org.apache.calcite.util.Source;
 import org.apache.calcite.util.Sources;
+
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Multimap;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -73,6 +79,19 @@ public class CsvSchema extends AbstractSchema {
       tableMap = createTableMap();
     }
     return tableMap;
+  }
+
+  @Override protected Multimap<String, Function> getFunctionMultimap() {
+    ImmutableMultimap.Builder<String, Function> builder = ImmutableMultimap.builder();
+
+    // Register the resolve UDF function
+    ScalarFunction resolveFunction = ScalarFunctionImpl.create(
+        CsvTranslatableTable.class, "resolve");
+    if (resolveFunction != null) {
+      builder.put("RESOLVE", resolveFunction);
+    }
+
+    return builder.build();
   }
 
   private Map<String, Table> createTableMap() {

@@ -258,6 +258,18 @@ class CsvTest {
   }
 
   /**
+   * Test the resolve UDF function to access tuple field values
+   */
+  @Test void testResolveUDF() {
+    sql("smart", "select resolve(_TUPLE, 'v') from EMPS")
+        .returns(
+            "EXPR$0=1",
+            "EXPR$0=2"
+        )
+        .ok();
+  }
+
+  /**
    * Tests the vanity driver.
    */
   @Disabled

@@ -119,6 +119,24 @@ public class CsvTranslatableTable extends CsvTable
     }
   }
 
+  /**
+   * Static UDF function to resolve field values from a Tuple.
+   * This function can be called from SQL as: resolve(_TUPLE, 'fieldName')
+   *
+   * @param tupleObj The Tuple object to resolve from (passed as Object)
+   * @param fieldName The field name to resolve
+   * @return The field value, or null if not found
+   */
+  public static Object resolve(Object tupleObj, String fieldName) {
+    if (tupleObj == null) {
+      return null;
+    }
+    if (tupleObj instanceof Tuple) {
+      return ((Tuple) tupleObj).resolve(fieldName);
+    }
+    return null;
+  }
+
   public static class MockEnumerator<Tuple>
       implements Enumerator<CsvTranslatableTable.Tuple> {
 
