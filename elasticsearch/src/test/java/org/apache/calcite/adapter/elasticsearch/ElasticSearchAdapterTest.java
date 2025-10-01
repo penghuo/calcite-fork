@@ -185,7 +185,19 @@ class ElasticSearchAdapterTest {
     assertNotNull(esSchmea);
   }
 
+  @Test void bb() {
+    calciteAssert()
+        // by default elastic returns max 10 records
+        .query("select _MAP['city'] from elastic.zips")
+        .runs();
+  }
+
   @Test void basic() {
+    calciteAssert()
+        // by default elastic returns max 10 records
+        .query("select _MAP['city'] from elastic.zips")
+        .runs();
+
     calciteAssert()
         // by default elastic returns max 10 records
         .query("select * from elastic.zips")

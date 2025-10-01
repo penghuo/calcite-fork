@@ -189,6 +189,14 @@ class CsvTest {
     }
   }
 
+  @Test void testCastVarcharToInteger() {
+    sql("model", "select deptno+1 from DEPTS").ok();
+  }
+
+  @Test void testVarcharAddVarchar() {
+    sql("model", "select deptno+deptno from DEPTS").ok();
+  }
+
   @Test void testFilterSmart() {
     sql("smart", "select * from EMPS where name = 'John'").ok();
   }
@@ -204,7 +212,27 @@ class CsvTest {
   }
 
   @Test void testDynamicJson() {
-    sql("dynamic", "select deptno, cast(deptno as int)+1, noexist from sales.JSDEPTS").ok();
+    sql("dynamic", "select noexist from sales.JSDEPTS").ok();
+  }
+
+  @Test void testArrayAgg() {
+    sql("model", "SELECT ARRAY_AGG(DISTINCT cast(age as varchar) ORDER BY cast(age as varchar)) FROM emps").ok();
+  }
+
+  @Test void testArrayAggNoCast() {
+    sql("model", "SELECT ARRAY_AGG(DISTINCT age ORDER BY age) FROM emps").ok();
+  }
+
+  @Test void testRegex() {
+    sql("model", "SELECT REGEXP_EXTRACT(city, '(San) (Francisco)', 1), REGEXP_EXTRACT(city,'(San) (Francisco)', 2) FROM emps").ok();
+  }
+
+  @Test void testSelectStar() {
+    sql("model", "SELECT REGEXP_EXTRACT(city, '(San) (Francisco)', 1), REGEXP_EXTRACT(city,'(San) (Francisco)', 2) FROM emps").ok();
+  }
+
+  @Test void testAggRename() {
+    sql("model", "SELECT age as age FROM emps").ok();
   }
 
   /**
@@ -537,6 +565,7 @@ class CsvTest {
     try {
       Properties info = new Properties();
       info.put("model", jsonPath(model));
+      info.put("fun", "postgresql,bigquery");
       connection = DriverManager.getConnection("jdbc:calcite:", info);
       statement = connection.createStatement();
       final ResultSet resultSet =
