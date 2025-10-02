@@ -305,8 +305,17 @@ class CsvTest {
   /**
    * Merge
    */
-  @Test void testMergeLambdaWithConflict() {
+  @Test void testMergeWithConflict() {
     sql("smart", "select tuple_merge(_TUPLE, 'v', resolve(_TUPLE, 'v')+1) from EMPS")
+        .returns(
+            "EXPR$0=Tuple{data={v=[1,2]}}",
+            "EXPR$0=Tuple{data={v=[2,3]}}"
+        )
+        .ok();
+  }
+
+  @Test void testSpath() {
+    sql("smart", "select tuple_merge(_TUPLE, 'v', spath(resolve(_TUPLE, 'log'))) from EMPS")
         .returns(
             "EXPR$0=Tuple{data={v=[1,2]}}",
             "EXPR$0=Tuple{data={v=[2,3]}}"

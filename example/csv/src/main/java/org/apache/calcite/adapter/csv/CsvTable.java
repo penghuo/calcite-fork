@@ -20,6 +20,8 @@ package org.apache.calcite.adapter.csv;
 
 import static org.apache.calcite.sql.SqlCollation.IMPLICIT;
 
+
+import java.nio.charset.Charset;
 import java.util.Objects;
 
 import org.apache.calcite.adapter.file.CsvEnumerator;
@@ -27,11 +29,14 @@ import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.rel.type.RelDataTypeFactoryImpl;
 import org.apache.calcite.rel.type.RelDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rel.type.RelDataTypeImpl;
 import org.apache.calcite.rel.type.RelProtoDataType;
 import org.apache.calcite.schema.impl.AbstractTable;
+import org.apache.calcite.sql.SqlCollation;
+import org.apache.calcite.sql.SqlIntervalQualifier;
 import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.type.SqlTypeUtil;
@@ -85,19 +90,5 @@ public abstract class CsvTable extends AbstractTable {
   /** Various degrees of table "intelligence". */
   public enum Flavor {
     SCANNABLE, FILTERABLE, TRANSLATABLE, DYNAMIC
-  }
-
-  public static class RelTupleType extends RelDataTypeImpl {
-    @Override
-    public RelDataTypeFamily getFamily() {
-      return SqlTypeFamily.CHARACTER;
-    }
-
-    @Override
-    protected void generateTypeString(StringBuilder sb, boolean withDetail) {
-      sb.append("[");
-      sb.append("tuple");
-      sb.append("]");
-    }
   }
 }

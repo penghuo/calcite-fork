@@ -98,13 +98,6 @@ public class CsvSchema extends AbstractSchema {
       builder.put("TUPLE_MERGE", mergeFunction);
     }
 
-    // Register the lambda-enabled merge UDF function
-    ScalarFunction mergeLambdaFunction = ScalarFunctionImpl.create(
-        CsvTranslatableTable.class, "mergeLambda");
-    if (mergeLambdaFunction != null) {
-      builder.put("TUPLE_MERGE_LAMBDA", mergeLambdaFunction);
-    }
-
     return builder.build();
   }
 
