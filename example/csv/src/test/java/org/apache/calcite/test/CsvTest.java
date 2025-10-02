@@ -270,6 +270,51 @@ class CsvTest {
   }
 
   /**
+   * Test work with other functions
+   */
+  @Test void testResolveFunction() {
+    sql("smart", "select concat(resolve(_TUPLE, 'v'), ' world') from EMPS")
+        .returns(
+            "EXPR$0=1 world",
+            "EXPR$0=2 world"
+        )
+        .ok();
+  }
+
+  @Test void testResolveFunction2() {
+    sql("smart", "select resolve(_TUPLE, 'v')+1 from EMPS")
+        .returns(
+            "EXPR$0=2",
+            "EXPR$0=3"
+        )
+        .ok();
+  }
+
+  /**
+   * Test the tuple_merge UDF function to update an existing field
+   */
+  @Test void testMergeUDFUpdateField() {
+    sql("smart", "select tuple_merge(_TUPLE, 'vv', resolve(_TUPLE, 'v')+1) from EMPS")
+        .returns(
+            "EXPR$0=Tuple{data={v=1, vv=2}}",
+            "EXPR$0=Tuple{data={v=2, vv=3}}"
+        )
+        .ok();
+  }
+
+  /**
+   * Merge
+   */
+  @Test void testMergeLambdaWithConflict() {
+    sql("smart", "select tuple_merge(_TUPLE, 'v', resolve(_TUPLE, 'v')+1) from EMPS")
+        .returns(
+            "EXPR$0=Tuple{data={v=[1,2]}}",
+            "EXPR$0=Tuple{data={v=[2,3]}}"
+        )
+        .ok();
+  }
+
+  /**
    * Tests the vanity driver.
    */
   @Disabled

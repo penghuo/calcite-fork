@@ -17,12 +17,20 @@
 package org.apache.calcite.adapter.csv;
 
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import java.util.function.Function;
+
+import java.util.function.Supplier;
+
+import static java.util.Objects.requireNonNull;
 
 import org.apache.calcite.DataContext;
 import org.apache.calcite.adapter.file.CsvEnumerator;
@@ -32,6 +40,7 @@ import org.apache.calcite.linq4j.Enumerable;
 import org.apache.calcite.linq4j.Enumerator;
 import org.apache.calcite.linq4j.QueryProvider;
 import org.apache.calcite.linq4j.Queryable;
+
 import org.apache.calcite.linq4j.tree.Expression;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.RelNode;
@@ -49,6 +58,8 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.lang.reflect.Type;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.json.simple.JSONArray;
 
 /**
  * Table based on a CSV file.
@@ -101,23 +112,48 @@ public class CsvTranslatableTable extends CsvTable
 
 
   public static class Tuple {
-    private final Map<String, Object> data;
+    public final Map<String, Object> data;
 
     public Tuple(Map<String, Object> data) {
       this.data = data;
     }
 
-    public Object resolve(String fieldName) {
-      return data.getOrDefault(fieldName, null);
+    public Object resolve(String path) {
+      if(data.containsKey(path)) {
+        Object v = data.get(path);
+        if (v instanceof JSONArray) {
+          return ((JSONArray) v).toArray();
+        }
+        return v;
+      }
+      return null;
+    }
+
+    public Tuple merge(String path, Object v) {
+      if (data.containsKey(path)) {
+        JSONArray jsonArray = new JSONArray();
+        jsonArray.add(data.get(path));
+        jsonArray.add(v);
+        data.put(path, jsonArray);
+      } else {
+        data.put(path, v);
+      }
+      return this;
     }
 
     @Override
     public String toString() {
+      // Create a map with evaluated values for toString display
+      Map<String, Object> evaluatedData = new java.util.LinkedHashMap<>();
+      for (Map.Entry<String, Object> entry : data.entrySet()) {
+        evaluatedData.put(entry.getKey(), entry.getValue());
+      }
       return "Tuple{" +
-          "data=" + data +
+          "data=" + evaluatedData +
           '}';
     }
   }
+
 
   /**
    * Static UDF function to resolve field values from a Tuple.
@@ -137,14 +173,43 @@ public class CsvTranslatableTable extends CsvTable
     return null;
   }
 
+  /**
+   * Static UDF function to merge a new field value into a Tuple.
+   * This function can be called from SQL as: tuple_merge(_TUPLE, 'fieldName', value)
+   *
+   * @param tupleObj The Tuple object to merge into (passed as Object)
+   * @param fieldName The field name to set/update
+   * @param valueProvider The value provider (can be a constant value or supplier function)
+   * @return A new Tuple with the merged field, or null if input tuple is null
+   */
+  public static Tuple merge(Object tupleObj, String fieldName, Object valueProvider) {
+    if (tupleObj == null) {
+      return null;
+    }
+
+    if (!(tupleObj instanceof Tuple)) {
+      return null;
+    }
+
+    Tuple originalTuple = (Tuple) tupleObj;
+    originalTuple.merge(fieldName, valueProvider);
+
+    return originalTuple;
+  }
+
+
   public static class MockEnumerator<Tuple>
       implements Enumerator<CsvTranslatableTable.Tuple> {
 
     private final List<CsvTranslatableTable.Tuple> list;
     {
       list = new ArrayList<>();
-      list.add(new CsvTranslatableTable.Tuple(ImmutableMap.of("v", "1")));
-      list.add(new CsvTranslatableTable.Tuple(ImmutableMap.of("v", "2")));
+      Map<String, Object> v1 = new LinkedHashMap<>();
+      v1.put("v", 1);
+      Map<String, Object> v2 = new LinkedHashMap<>();
+      v2.put("v", 2);
+      list.add(new CsvTranslatableTable.Tuple(v1));
+      list.add(new CsvTranslatableTable.Tuple(v2));
     }
 
     private final Iterator<CsvTranslatableTable.Tuple> iterator = list.iterator();
