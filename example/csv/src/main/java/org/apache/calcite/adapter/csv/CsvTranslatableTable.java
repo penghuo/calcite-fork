@@ -199,25 +199,25 @@ public class CsvTranslatableTable extends CsvTable
 
 
   public static class MockEnumerator<Tuple>
-      implements Enumerator<CsvTranslatableTable.Tuple> {
+      implements Enumerator<Map<String, Object>> {
 
-    private final List<CsvTranslatableTable.Tuple> list;
+    private final List<Map<String, Object>> list;
     {
       list = new ArrayList<>();
       Map<String, Object> v1 = new LinkedHashMap<>();
       v1.put("v", 1);
       Map<String, Object> v2 = new LinkedHashMap<>();
       v2.put("v", 2);
-      list.add(new CsvTranslatableTable.Tuple(v1));
-      list.add(new CsvTranslatableTable.Tuple(v2));
+      list.add(v1);
+      list.add(v2);
     }
 
-    private final Iterator<CsvTranslatableTable.Tuple> iterator = list.iterator();
+    private final Iterator<Map<String, Object>> iterator = list.iterator();
     private boolean hasNext = false;
-    private CsvTranslatableTable.Tuple current;
+    private Map<String, Object> current;
 
     @Override
-    public CsvTranslatableTable.Tuple current() {
+    public Map<String, Object> current() {
       return current;
     }
 

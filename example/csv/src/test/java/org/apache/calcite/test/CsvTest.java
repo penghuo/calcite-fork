@@ -314,11 +314,20 @@ class CsvTest {
         .ok();
   }
 
-  @Test void testSpath() {
-    sql("smart", "select tuple_merge(_TUPLE, 'v', spath(resolve(_TUPLE, 'log'))) from EMPS")
+  @Test void testMAP() {
+    sql("smart", "select _MAP from EMPS")
         .returns(
-            "EXPR$0=Tuple{data={v=[1,2]}}",
-            "EXPR$0=Tuple{data={v=[2,3]}}"
+            "_MAP={v=1}",
+            "_MAP={v=2}"
+        )
+        .ok();
+  }
+
+  @Test void testMAPAccess() {
+    sql("smart", "select _MAP['v']+1 from EMPS")
+        .returns(
+            "EXPR$0=1",
+            "EXPR$0=2"
         )
         .ok();
   }

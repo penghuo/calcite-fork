@@ -21,22 +21,28 @@ package org.apache.calcite.adapter.csv;
 import static org.apache.calcite.sql.SqlCollation.IMPLICIT;
 
 
+import com.google.common.collect.ImmutableMap;
+
 import java.nio.charset.Charset;
+import java.util.Map;
 import java.util.Objects;
 
 import org.apache.calcite.adapter.file.CsvEnumerator;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
+import org.apache.calcite.rel.type.DynamicRecordTypeImpl;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeFactoryImpl;
 import org.apache.calcite.rel.type.RelDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rel.type.RelDataTypeImpl;
+import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.rel.type.RelProtoDataType;
 import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.sql.SqlCollation;
 import org.apache.calcite.sql.SqlIntervalQualifier;
+import org.apache.calcite.sql.type.MapSqlType;
 import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.type.SqlTypeUtil;
@@ -63,13 +69,15 @@ public abstract class CsvTable extends AbstractTable {
   }
 
   @Override public RelDataType getRowType(RelDataTypeFactory typeFactory) {
-//    RelTupleType relTupleType = new RelTupleType();
-//    RelDataType tupleType =
-//        typeFactory.createTypeWithCharsetAndCollation(relTupleType,
-//            typeFactory.getDefaultCharset(),
-//            IMPLICIT);
-    RelDataType tupleType = typeFactory.createJavaType(CsvTranslatableTable.Tuple.class);
-    return typeFactory.builder().add("_TUPLE", tupleType).build();
+    RelDataType extendMapType =
+        new ExtendDataTypeFactory(typeFactory.getTypeSystem()).createExtendMapType(
+            typeFactory.createSqlType(SqlTypeName.VARCHAR),
+            typeFactory.createTypeWithNullability(
+                typeFactory.createSqlType(SqlTypeName.ANY),
+                true),
+            ImmutableMap.of()
+        );
+    return typeFactory.builder().add("_MAP", extendMapType).build();
   }
 
   /** Returns the field types of this CSV table. */
@@ -90,5 +98,91 @@ public abstract class CsvTable extends AbstractTable {
   /** Various degrees of table "intelligence". */
   public enum Flavor {
     SCANNABLE, FILTERABLE, TRANSLATABLE, DYNAMIC
+  }
+
+  public static class ExtendDataTypeFactory extends RelDataTypeFactoryImpl {
+
+
+    /**
+     * Creates a type factory.
+     *
+     * @param typeSystem
+     */
+    protected ExtendDataTypeFactory(RelDataTypeSystem typeSystem) {
+      super(typeSystem);
+    }
+
+    public RelDataType createExtendMapType(
+        RelDataType keyType,
+        RelDataType valueType,
+        Map<String, RelDataType> knownType) {
+      ExtendMapType newType = new ExtendMapType(keyType, valueType, false);
+      newType.knownType =  knownType;
+      return canonize(newType);
+    }
+
+    @Override
+    public RelDataType createArrayType(RelDataType elementType, long maxCardinality) {
+      return null;
+    }
+
+    @Override
+    public RelDataType createMapType(RelDataType keyType, RelDataType valueType) {
+      return null;
+    }
+
+    @Override
+    public RelDataType createFunctionSqlType(RelDataType parameterType, RelDataType returnType) {
+      return null;
+    }
+
+    @Override
+    public RelDataType createMeasureType(RelDataType valueType) {
+      return null;
+    }
+
+    @Override
+    public RelDataType createMultisetType(RelDataType elementType, long maxCardinality) {
+      return null;
+    }
+
+    @Override
+    public RelDataType createTypeWithCharsetAndCollation(RelDataType type, Charset charset,
+        SqlCollation collation) {
+      return null;
+    }
+
+    @Override
+    public RelDataType createSqlType(SqlTypeName typeName) {
+      return null;
+    }
+
+    @Override
+    public RelDataType createUnknownType() {
+      return null;
+    }
+
+    @Override
+    public RelDataType createSqlType(SqlTypeName typeName, int precision) {
+      return null;
+    }
+
+    @Override
+    public RelDataType createSqlType(SqlTypeName typeName, int precision, int scale) {
+      return null;
+    }
+
+    @Override
+    public RelDataType createSqlIntervalType(SqlIntervalQualifier intervalQualifier) {
+      return null;
+    }
+
+    class ExtendMapType extends MapSqlType {
+      public Map<String, RelDataType> knownType;
+
+      public ExtendMapType(RelDataType keyType, RelDataType valueType, boolean isNullable) {
+        super(keyType, valueType, isNullable);
+      }
+    }
   }
 }
