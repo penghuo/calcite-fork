@@ -64,7 +64,7 @@ class RelDataTypeHolder {
     }
 
     final SqlTypeName typeName = DynamicRecordType.isDynamicStarColName(fieldName)
-        ? SqlTypeName.DYNAMIC_STAR : SqlTypeName.ANY;
+        ? SqlTypeName.DYNAMIC_STAR : SqlTypeName.VARIANT;
 
     // This field does not exist in our field list; add it
     RelDataTypeField newField =

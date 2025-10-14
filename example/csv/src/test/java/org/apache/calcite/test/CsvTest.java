@@ -204,6 +204,10 @@ class CsvTest {
   }
 
   @Test void testDynamicJson() {
+    sql("dynamic", "select deptno, deptno+1, noexist from sales.JSDEPTS").ok();
+  }
+
+  @Test void testDynamicJsonCast() {
     sql("dynamic", "select deptno, cast(deptno as int)+1, noexist from sales.JSDEPTS").ok();
   }
 

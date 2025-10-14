@@ -16,11 +16,25 @@
  */
 package org.apache.calcite.adapter.file;
 
+import static org.apache.calcite.runtime.rtti.RuntimeTypeInformation.RuntimeSqlTypeName.INTEGER;
+import static org.apache.calcite.runtime.rtti.RuntimeTypeInformation.RuntimeSqlTypeName.VARCHAR;
+import static org.apache.calcite.runtime.rtti.RuntimeTypeInformation.RuntimeSqlTypeName.VARIANT;
+
+import java.math.RoundingMode;
+
+import java.util.stream.Collectors;
+
 import org.apache.calcite.linq4j.Enumerator;
 import org.apache.calcite.linq4j.Linq4j;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.runtime.rtti.BasicSqlTypeRtti;
+import org.apache.calcite.runtime.rtti.RuntimeTypeInformation;
+import org.apache.calcite.runtime.variant.VariantNonNull;
+import org.apache.calcite.runtime.variant.VariantNull;
+import org.apache.calcite.runtime.variant.VariantSqlValue;
+import org.apache.calcite.runtime.variant.VariantValue;
 import org.apache.calcite.util.Pair;
 import org.apache.calcite.util.Source;
 
@@ -100,9 +114,9 @@ public class JsonEnumerator implements Enumerator<@Nullable Object[]> {
         LinkedHashMap<String, Object> data = (LinkedHashMap<String, Object>) o;
         for (RelDataTypeField relDataTypeField : relDataType.getFieldList()) {
           if (data.containsKey(relDataTypeField.getName())) {
-            result.put(relDataTypeField.getName(), data.get(relDataTypeField.getName()));
+            result.put(relDataTypeField.getName(), toVariant(data.get(relDataTypeField.getName())));
           } else {
-            result.put(relDataTypeField.getName(), null);
+            result.put(relDataTypeField.getName(), VariantNull.INSTANCE);
           }
         }
         list.add(result);
@@ -111,7 +125,11 @@ public class JsonEnumerator implements Enumerator<@Nullable Object[]> {
       //noinspection unchecked
       jsonFieldMap = (LinkedHashMap) jsonObj;
       //noinspection unchecked
-      list = new ArrayList(((LinkedHashMap) jsonObj).values());
+      List<Object> tempList = new ArrayList(((LinkedHashMap) jsonObj).values());
+      list = new ArrayList<>();
+      for (Object o : tempList) {
+        list.add(toVariant(o));
+      }
     } else {
       jsonFieldMap.put("line", jsonObj);
       list = new ArrayList<>();
@@ -121,66 +139,14 @@ public class JsonEnumerator implements Enumerator<@Nullable Object[]> {
     return new JsonDataConverter(relDataType, list);
   }
 
-  /** Deduces the names and types of a table's columns by reading the first line
-   * of a JSON file. */
-  static JsonDataConverter deduceRowType(RelDataTypeFactory typeFactory, Source source) {
-    final ObjectMapper objectMapper = new ObjectMapper();
-    List<Object> list;
-    LinkedHashMap<String, Object> jsonFieldMap = new LinkedHashMap<>(1);
-    Object jsonObj = null;
-    try {
-      objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true)
-          .configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true)
-          .configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-
-      if ("file".equals(source.protocol()) && source.file().exists()) {
-        //noinspection unchecked
-        jsonObj = objectMapper.readValue(source.file(), Object.class);
-      } else if (Arrays.asList("http", "https", "ftp").contains(source.protocol())) {
-        //noinspection unchecked
-        jsonObj = objectMapper.readValue(source.url(), Object.class);
-      } else {
-        jsonObj = objectMapper.readValue(source.reader(), Object.class);
-      }
-
-    } catch (MismatchedInputException e) {
-      if (!e.getMessage().contains("No content")) {
-        throw new RuntimeException("Couldn't read " + source, e);
-      }
-    } catch (Exception e) {
-      throw new RuntimeException("Couldn't read " + source, e);
-    }
-
-    if (jsonObj == null) {
-      list = new ArrayList<>();
-      jsonFieldMap.put("EmptyFileHasNoColumns", Boolean.TRUE);
-    } else if (jsonObj instanceof Collection) {
-      //noinspection unchecked
-      list = (List<Object>) jsonObj;
-      //noinspection unchecked
-      jsonFieldMap = (LinkedHashMap) list.get(0);
-    } else if (jsonObj instanceof Map) {
-      //noinspection unchecked
-      jsonFieldMap = (LinkedHashMap) jsonObj;
-      //noinspection unchecked
-      list = new ArrayList(((LinkedHashMap) jsonObj).values());
+  public static VariantValue toVariant(Object o) {
+    RuntimeTypeInformation.RuntimeSqlTypeName sqlTypeName = VARIANT;
+    if (o instanceof Integer) {
+      sqlTypeName=INTEGER;
     } else {
-      jsonFieldMap.put("line", jsonObj);
-      list = new ArrayList<>();
-      list.add(0, jsonObj);
+      sqlTypeName=VARCHAR;
     }
-
-    final List<RelDataType> types = new ArrayList<RelDataType>(jsonFieldMap.size());
-    final List<String> names = new ArrayList<String>(jsonFieldMap.size());
-
-    for (Object key : jsonFieldMap.keySet()) {
-      final RelDataType type = typeFactory.createJavaType(jsonFieldMap.get(key).getClass());
-      names.add(key.toString());
-      types.add(type);
-    }
-
-    RelDataType relDataType = typeFactory.createStructType(Pair.zip(names, types));
-    return new JsonDataConverter(relDataType, list);
+    return VariantSqlValue.create(RoundingMode.CEILING, o, new BasicSqlTypeRtti(sqlTypeName));
   }
 
   @Override public Object[] current() {

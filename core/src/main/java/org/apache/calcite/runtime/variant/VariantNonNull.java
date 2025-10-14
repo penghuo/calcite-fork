@@ -210,6 +210,18 @@ public class VariantNonNull extends VariantSqlValue {
         // Convert numeric values
         @Nullable Primitive target = type.asPrimitive();
         switch (this.runtimeType) {
+        case VARCHAR:
+          switch (type.getTypeName()) {
+          case INTEGER:
+            try {
+              return Integer.parseInt((String) value);
+            } catch (NumberFormatException e) {
+              return null;
+            }
+          default:
+            break;
+          }
+          break;
         case TINYINT: {
           byte b = (byte) value;
           switch (type.getTypeName()) {
