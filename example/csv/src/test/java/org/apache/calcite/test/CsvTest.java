@@ -211,6 +211,19 @@ class CsvTest {
     sql("dynamic", "select deptno, cast(deptno as int)+1, noexist from sales.JSDEPTS").ok();
   }
 
+
+  @Test void testRows() {
+    sql("dynamic", "SELECT ROW(1,2,3)").ok();
+  }
+
+  @Test void testValuesRow() {
+    sql("dynamic", "SELECT * FROM (VALUES (ROW(1, 2)))").ok();
+  }
+
+  @Test void testValuesMap() {
+    sql("dynamic", "SELECT t['v1'] FROM (VALUES (MAP['v1', 1, 'v2', 2])) as t").ok();
+  }
+
   /**
    * Tests the vanity driver.
    */
